@@ -9,11 +9,13 @@ type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Delete(pk uint) (bool, error)
 	Repo() *Repository[Entity]
 	Response() Res
+	ServiceEvents
 }
 
 type GenericService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
-	repo *Repository[Entity]
-	res  Res
+	repo     *Repository[Entity]
+	res      Res
+	features Features
 }
 
 type GenericRepository[Entity interface{}] struct {
@@ -27,6 +29,10 @@ func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Ent
 	return &GenericService[Entity, Req, Res]{
 		repo: repo,
 		res:  resDto,
+		features: Features{
+			BeforeCallRepo: nil,
+			AfterCallRepo:  nil,
+		},
 	}
 }
 
@@ -81,6 +87,13 @@ func (s *GenericService[Entity, Req, Res]) Create(dto Req) (Res, error) {
 		return res, err
 	}
 
+	if s.features.BeforeCallRepo != nil {
+		err := s.features.BeforeCallRepo.handler(dto, ent)
+		if err != nil {
+			return res, err
+		}
+	}
+
 	create, err := s.repo.Create(ent)
 	if err != nil {
 		return res, err
@@ -89,6 +102,13 @@ func (s *GenericService[Entity, Req, Res]) Create(dto Req) (Res, error) {
 	err = res.FromEntity(*create)
 	if err != nil {
 		return res, err
+	}
+
+	if s.features.AfterCallRepo != nil {
+		err := s.features.AfterCallRepo.handler(res, create)
+		if err != nil {
+			return res, err
+		}
 	}
 
 	return res, nil
@@ -106,6 +126,13 @@ func (s *GenericService[Entity, Req, Res]) Update(pk uint, dto Req) (Res, error)
 		return res, err
 	}
 
+	if s.features.BeforeCallRepo != nil {
+		err := s.features.BeforeCallRepo.handler(dto, find)
+		if err != nil {
+			return res, err
+		}
+	}
+
 	update, err := s.repo.Update(pk, *find)
 	if err != nil {
 		return res, err
@@ -115,6 +142,14 @@ func (s *GenericService[Entity, Req, Res]) Update(pk uint, dto Req) (Res, error)
 	if err != nil {
 		return res, err
 	}
+
+	if s.features.AfterCallRepo != nil {
+		err := s.features.AfterCallRepo.handler(res, update)
+		if err != nil {
+			return res, err
+		}
+	}
+
 	return res, nil
 }
 
@@ -130,6 +165,13 @@ func (s *GenericService[Entity, Req, Res]) Patch(pk uint, dto Req) (Res, error) 
 		return res, err
 	}
 
+	if s.features.BeforeCallRepo != nil {
+		err := s.features.BeforeCallRepo.handler(dto, find)
+		if err != nil {
+			return res, err
+		}
+	}
+
 	update, err := s.repo.Update(pk, *find)
 	if err != nil {
 		return res, err
@@ -139,6 +181,14 @@ func (s *GenericService[Entity, Req, Res]) Patch(pk uint, dto Req) (Res, error) 
 	if err != nil {
 		return res, err
 	}
+
+	if s.features.AfterCallRepo != nil {
+		err := s.features.AfterCallRepo.handler(res, update)
+		if err != nil {
+			return res, err
+		}
+	}
+
 	return res, nil
 }
 
@@ -147,6 +197,13 @@ func (s *GenericService[Entity, Req, Res]) Delete(pk uint) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 	return b, nil
+}
+
+func (s *GenericService[Entity, Req, Res]) BeforeCallRepo(br BeforeCallRepoHandler) {
+	s.features.BeforeCallRepo = NewBeforeCallRepo(br)
+}
+
+func (s *GenericService[Entity, Req, Res]) AfterCallRepo(ar AfterCallRepoHandler) {
+	s.features.AfterCallRepo = NewAfterCallRepo(ar)
 }

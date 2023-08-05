@@ -5,27 +5,30 @@ import "github.com/gofiber/fiber/v2"
 type Event string
 
 type Features struct {
-	ParseRequest     *ParseRequest
-	BeforeValidation *BeforeValidation
-	AfterValidation  *AfterValidation
+	ParseRequest      *ParseRequest
+	BeforeCallService *BeforeCallService
+	AfterCallService  *AfterCallService
+	BeforeCallRepo    *BeforeCallRepo
+	AfterCallRepo     *AfterCallRepo
 }
 
 const (
 	ParseRequestEvent      Event = "parseRequest"
-	BeforeValidationEvent  Event = "beforeValidation"
-	AfterValidationEvent   Event = "afterValidation"
 	BeforeCallServiceEvent Event = "beforeCallService"
 	AfterCallServiceEvent  Event = "afterCallService"
 	BeforeCallRepoEvent    Event = "beforeCallRepo"
 	AfterCallRepoEvent     Event = "afterCallRepo"
-	BeforeResponse         Event = "beforeResponse"
-	CreatedResponse        Event = "createdResponse"
 )
 
 type HandlerEvents interface {
 	ParseRequest(pr ParseRequestHandler)
-	BeforeValidation(bv BeforeValidationHandler)
-	AfterValidation(av AfterValidationHandler)
+	BeforeCallService(bs BeforeCallServiceHandler)
+	AfterCallService(as AfterCallServiceHandler)
+}
+
+type ServiceEvents interface {
+	BeforeCallRepo(br BeforeCallRepoHandler)
+	AfterCallRepo(ar AfterCallRepoHandler)
 }
 
 type ParseRequestHandler = func(ctx *fiber.Ctx, dto interface{}) error
@@ -46,34 +49,66 @@ func NewParseRequest(handler ParseRequestHandler) *ParseRequest {
 	}
 }
 
-type BeforeValidationHandler = func(dto interface{}) error
-type BeforeValidation struct {
+type BeforeCallServiceHandler = func(dto interface{}) error
+type BeforeCallService struct {
 	event   Event
-	handler BeforeValidationHandler
+	handler BeforeCallServiceHandler
 }
 
-func NewBeforeValidation(handler BeforeValidationHandler) *BeforeValidation {
-	return &BeforeValidation{
-		event:   BeforeValidationEvent,
-		handler: handler,
+func NewBeforeCallService(bs BeforeCallServiceHandler) *BeforeCallService {
+	return &BeforeCallService{
+		event:   BeforeCallServiceEvent,
+		handler: bs,
 	}
 }
-func (bv *BeforeValidation) Handler() func(dto interface{}) error {
-	return bv.handler
+func (bs *BeforeCallService) Handler() BeforeCallServiceHandler {
+	return bs.handler
 }
 
-type AfterValidationHandler = func(dto interface{}) error
-type AfterValidation struct {
+type AfterCallServiceHandler = func(dto interface{}) error
+type AfterCallService struct {
 	event   Event
-	handler AfterValidationHandler
+	handler AfterCallServiceHandler
 }
 
-func NewAfterValidation(handler AfterValidationHandler) *AfterValidation {
-	return &AfterValidation{
-		event:   AfterValidationEvent,
-		handler: handler,
+func NewAfterCallService(as AfterCallServiceHandler) *AfterCallService {
+	return &AfterCallService{
+		event:   AfterCallServiceEvent,
+		handler: as,
 	}
 }
-func (av *AfterValidation) Handler() AfterValidationHandler {
-	return av.handler
+func (as *AfterCallService) Handler() AfterCallServiceHandler {
+	return as.handler
+}
+
+type BeforeCallRepoHandler = func(dto interface{}, entity interface{}) error
+type BeforeCallRepo struct {
+	event   Event
+	handler BeforeCallRepoHandler
+}
+
+func NewBeforeCallRepo(br BeforeCallRepoHandler) *BeforeCallRepo {
+	return &BeforeCallRepo{
+		event:   BeforeCallRepoEvent,
+		handler: br,
+	}
+}
+func (br *BeforeCallRepo) Handler() BeforeCallRepoHandler {
+	return br.handler
+}
+
+type AfterCallRepoHandler = func(dto interface{}, entity interface{}) error
+type AfterCallRepo struct {
+	event   Event
+	handler AfterCallRepoHandler
+}
+
+func NewAfterCallRepo(ar AfterCallRepoHandler) *AfterCallRepo {
+	return &AfterCallRepo{
+		event:   AfterCallRepoEvent,
+		handler: ar,
+	}
+}
+func (ar *AfterCallRepo) Handler() AfterCallRepoHandler {
+	return ar.handler
 }

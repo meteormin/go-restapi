@@ -71,3 +71,17 @@ func TestGenericHandler_All(t *testing.T) {
 	}
 	t.Log(string(all))
 }
+
+func TestGenericHandler_Find(t *testing.T) {
+	app.App().Fiber().Get("/tests/:id", h.Find)
+	req := httptest.NewRequest("GET", "/tests/1", nil)
+	test, err := app.App().Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	all, err := io.ReadAll(test.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(string(all))
+}

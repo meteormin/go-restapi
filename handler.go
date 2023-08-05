@@ -28,9 +28,9 @@ func NewHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Ent
 		req:     req,
 		service: service,
 		features: Features{
-			ParseRequest:     nil,
-			BeforeValidation: nil,
-			AfterValidation:  nil,
+			ParseRequest:      nil,
+			BeforeCallService: nil,
+			AfterCallService:  nil,
 		},
 	}
 }
@@ -44,9 +44,25 @@ func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
 	}
 
 	filter, err := NewFilter[Entity](ctx, g.req)
+
+	if g.features.BeforeCallService != nil {
+		err := g.features.BeforeCallService.handler(g.req)
+		if err != nil {
+			return err
+		}
+	}
+
 	all, err := g.service.All(filter)
+
 	if err != nil {
 		return err
+	}
+
+	if g.features.AfterCallService != nil {
+		err := g.features.AfterCallService.handler(all)
+		if err != nil {
+			return err
+		}
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(all)
@@ -71,6 +87,13 @@ func (g *GenericHandler[Entity, Req, Res]) Find(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	if g.features.AfterCallService != nil {
+		err := g.features.AfterCallService.handler(find)
+		if err != nil {
+			return err
+		}
+	}
+
 	return ctx.Status(fiber.StatusOK).JSON(find)
 }
 
@@ -88,11 +111,24 @@ func (g *GenericHandler[Entity, Req, Res]) Create(ctx *fiber.Ctx) error {
 		return errRes.Response()
 	}
 
+	if g.features.BeforeCallService != nil {
+		err := g.features.BeforeCallService.handler(req)
+		if err != nil {
+			return err
+		}
+	}
+
 	create, err := g.service.Create(req)
 	if err != nil {
 		return err
 	}
 
+	if g.features.AfterCallService != nil {
+		err := g.features.AfterCallService.handler(req)
+		if err != nil {
+			return err
+		}
+	}
 	return ctx.Status(fiber.StatusCreated).JSON(create)
 }
 
@@ -116,9 +152,23 @@ func (g *GenericHandler[Entity, Req, Res]) Update(ctx *fiber.Ctx) error {
 		return errRes.Response()
 	}
 
+	if g.features.BeforeCallService != nil {
+		err := g.features.BeforeCallService.handler(req)
+		if err != nil {
+			return err
+		}
+	}
+
 	update, err := g.service.Update(uint(pk), req)
 	if err != nil {
 		return err
+	}
+
+	if g.features.AfterCallService != nil {
+		err := g.features.AfterCallService.handler(update)
+		if err != nil {
+			return err
+		}
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(update)
@@ -144,9 +194,23 @@ func (g *GenericHandler[Entity, Req, Res]) Patch(ctx *fiber.Ctx) error {
 		return errRes.Response()
 	}
 
+	if g.features.BeforeCallService != nil {
+		err := g.features.BeforeCallService.handler(req)
+		if err != nil {
+			return err
+		}
+	}
+
 	update, err := g.service.Patch(uint(pk), req)
 	if err != nil {
 		return err
+	}
+
+	if g.features.AfterCallService != nil {
+		err := g.features.AfterCallService.handler(update)
+		if err != nil {
+			return err
+		}
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(update)
@@ -171,6 +235,13 @@ func (g *GenericHandler[Entity, Req, Res]) Delete(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	if g.features.AfterCallService != nil {
+		err := g.features.AfterCallService.handler(find)
+		if err != nil {
+			return err
+		}
+	}
+
 	return ctx.Status(fiber.StatusNoContent).JSON(map[string]interface{}{
 		"result": find,
 	})
@@ -184,10 +255,10 @@ func (g *GenericHandler[Entity, Req, Res]) ParseRequest(pr ParseRequestHandler) 
 	g.features.ParseRequest = NewParseRequest(pr)
 }
 
-func (g *GenericHandler[Entity, Req, Res]) BeforeValidation(bv BeforeValidationHandler) {
-	g.features.BeforeValidation = NewBeforeValidation(bv)
+func (g *GenericHandler[Entity, Req, Res]) BeforeCallService(bs BeforeCallServiceHandler) {
+	g.features.BeforeCallService = NewBeforeCallService(bs)
 }
 
-func (g *GenericHandler[Entity, Req, Res]) AfterValidation(av AfterValidationHandler) {
-	g.features.AfterValidation = NewAfterValidation(av)
+func (g *GenericHandler[Entity, Req, Res]) AfterCallService(as AfterCallServiceHandler) {
+	g.features.AfterCallService = NewAfterCallService(as)
 }
