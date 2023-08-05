@@ -26,6 +26,9 @@ type Sorter struct {
 
 func (s *Sorter) Sort(db *gorm.DB) *gorm.DB {
 	for _, col := range s.columns {
+		if col == "" {
+			continue
+		}
 		order := strings.Split(col, " ")
 		if len(order) != 0 {
 			db = db.Order(fmt.Sprintf("%s %s", order[0], order[1]))
@@ -68,7 +71,8 @@ func NewFilter[Entity interface{}](ctx *fiber.Ctx, req RequestDTO[*Entity]) (*Fi
 	param := ctx.Query("sort")
 	sort := strings.Split(param, ",")
 	fromCtx, _ := pagination.GetPageFromCtx(ctx)
-	err := ctx.QueryParser(&req)
+
+	err := ctx.QueryParser(req)
 	if err != nil {
 		return nil, err
 	}
@@ -216,4 +220,36 @@ func transFromVal(v interface{}) interface{} {
 		return &conv
 	}
 	return nil
+}
+
+func DeepCopy(src interface{}) interface{} {
+	srcValue := reflect.ValueOf(src)
+	if srcValue.Kind() != reflect.Ptr || srcValue.IsNil() {
+		return nil
+	}
+
+	srcValue = srcValue.Elem() // Dereference the pointer
+	dst := reflect.New(srcValue.Type()).Elem()
+	deepCopyFields(srcValue, dst)
+	return dst.Addr().Interface()
+}
+
+func deepCopyFields(src, dst reflect.Value) {
+	for i := 0; i < src.NumField(); i++ {
+		srcField := src.Field(i)
+		dstField := dst.Field(i)
+
+		if srcField.Type().Kind() == reflect.Ptr {
+			if !srcField.IsNil() {
+				ptrValue := srcField.Elem()
+				newPtrValue := reflect.New(ptrValue.Type())
+				newPtrValue.Elem().Set(ptrValue)
+				dstField.Set(newPtrValue)
+			}
+		} else if srcField.Type().Kind() == reflect.Struct {
+			deepCopyFields(srcField, dstField)
+		} else {
+			dstField.Set(srcField)
+		}
+	}
 }

@@ -52,7 +52,7 @@ func (s *GenericService[Entity, Req, Res]) All(filter *Filter[Entity]) ([]Res, e
 
 	res := make([]Res, 0)
 	for _, ent := range entities {
-		temp := s.res
+		temp := DeepCopy(s.res).(Res)
 		err = temp.FromEntity(ent)
 		if err != nil {
 			return nil, err

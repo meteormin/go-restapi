@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/miniyus/go-restapi"
-	"github.com/miniyus/gofiber"
 	"github.com/miniyus/gofiber/app"
 	"io"
 	"net/http/httptest"
@@ -12,10 +11,6 @@ import (
 )
 
 var h restapi.Handler[TestEntity, *TestReq, *TestRes]
-
-func init() {
-	gofiber.New()
-}
 
 func TestNewHandler(t *testing.T) {
 	h = restapi.NewHandler[TestEntity, *TestReq, *TestRes](
@@ -60,7 +55,7 @@ func TestGenericHandler_Create(t *testing.T) {
 
 func TestGenericHandler_All(t *testing.T) {
 	app.App().Fiber().Get("/tests", h.All)
-	req := httptest.NewRequest("GET", "/tests", nil)
+	req := httptest.NewRequest("GET", "/tests?name=djsk", nil)
 	test, err := app.App().Test(req)
 	if err != nil {
 		t.Error(err)

@@ -3,6 +3,7 @@ package restapi_test
 import (
 	"github.com/go-faker/faker/v4"
 	"github.com/miniyus/go-restapi"
+	"github.com/miniyus/gofiber/app"
 	"github.com/miniyus/gofiber/database"
 	"gorm.io/gorm"
 )
@@ -26,7 +27,7 @@ type TestRelationReq struct {
 
 type TestReq struct {
 	restapi.RequestDTO[TestEntity] `faker:"-" json:"-"`
-	Name                           string          `faker:"username" json:"name" validate:"required"`
+	Name                           string          `faker:"username" json:"name" validate:"required" query:"name"`
 	TestRelation                   TestRelationReq `json:"test_relation" validate:"required"`
 }
 
@@ -66,11 +67,22 @@ func (tr *TestRes) FromEntity(ent TestEntity) error {
 var db *gorm.DB
 
 func init() {
-	db = database.New(database.Config{
-		Name:   "sqlite",
-		Driver: "sqlite",
-		Dbname: "test",
-	})
+	if app.App() == nil {
+		app.New(
+			app.Config{
+				Env: app.TEST,
+			},
+		)
+	}
+
+	db = database.New(
+		database.Config{
+			Name:   "sqlite",
+			Driver: "sqlite",
+			Dbname: "test",
+		},
+	).Debug()
+
 	err := db.AutoMigrate(TestEntity{}, TestRelationModel{})
 	if err != nil {
 		panic(err)

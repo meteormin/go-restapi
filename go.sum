@@ -62,6 +62,10 @@ github.com/mattn/go-sqlite3 v1.14.17 h1:mCRHCLDUBXgpKAqIKsaAaAsrAlbkeomtRFKXh2L6
 github.com/mattn/go-sqlite3 v1.14.17/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
 github.com/miniyus/gofiber v1.9.40 h1:L5IeIKXUluT6LTGcLs+bn9PO4c+eAYBogSMIpjQrwH8=
 github.com/miniyus/gofiber v1.9.40/go.mod h1:Gt/BIuhvEUVw/8IT3TVf3DZ4uCiwq8Pklk3RtFMYU2o=
+github.com/miniyus/gofiber v1.9.41 h1:MnJlt+J0eHlE8xNFhVzJobW5ZMHNQpeAmdsARLwXu6k=
+github.com/miniyus/gofiber v1.9.41/go.mod h1:Gt/BIuhvEUVw/8IT3TVf3DZ4uCiwq8Pklk3RtFMYU2o=
+github.com/miniyus/gofiber v1.9.42 h1:GI+2TaWXqppMiwdgtAONb+jb+X/MmwYAcVU1D3glwHc=
+github.com/miniyus/gofiber v1.9.42/go.mod h1:Gt/BIuhvEUVw/8IT3TVf3DZ4uCiwq8Pklk3RtFMYU2o=
 github.com/miniyus/gollection v1.1.0 h1:E36nQsFAEnHLCB8aOvrpecrOgs5NRKAj5J01lgpMu6o=
 github.com/miniyus/gollection v1.1.0/go.mod h1:wQ2WTBIvZi4RbuTjQgYfsS4kNEdmlkuu2TLulDuzosc=
 github.com/miniyus/gorm-extension v1.1.12 h1:MJ4qEm1QmJ2HkYp/bnaD90XhTt0R0YX2Nwa2OLIuspo=
