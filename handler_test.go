@@ -1,11 +1,11 @@
-package go_restapi_test
+package restapi_test
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/miniyus/go-restapi"
 	"github.com/miniyus/gofiber"
 	"github.com/miniyus/gofiber/app"
-	"github.com/smyoo-pb/testclient/pkg/restapi"
 	"io"
 	"net/http/httptest"
 	"testing"

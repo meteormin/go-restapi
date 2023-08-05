@@ -1,4 +1,4 @@
-package go_restapi
+package restapi
 
 import (
 	"github.com/miniyus/gorm-extension/gormrepo"

@@ -1,4 +1,4 @@
-package go_restapi
+package restapi
 
 type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
 	All(filter *Filter[Entity]) ([]Res, error)

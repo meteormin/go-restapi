@@ -1,7 +1,7 @@
-package go_restapi_test
+package restapi_test
 
 import (
-	"github.com/smyoo-pb/testclient/pkg/restapi"
+	"github.com/miniyus/go-restapi"
 	"testing"
 )
 

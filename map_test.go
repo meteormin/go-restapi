@@ -1,9 +1,9 @@
-package go_restapi_test
+package restapi_test
 
 import (
+	"github.com/miniyus/go-restapi"
 	"github.com/miniyus/gofiber/log"
 	"github.com/miniyus/structs"
-	"github.com/smyoo-pb/testclient/pkg/restapi"
 	"reflect"
 	"testing"
 )

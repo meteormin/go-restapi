@@ -1,8 +1,9 @@
-package go_restapi_test
+package restapi_test
 
 import (
+	"github.com/go-faker/faker/v4"
+	"github.com/miniyus/go-restapi"
 	"github.com/miniyus/gofiber/database"
-	"github.com/smyoo-pb/testclient/pkg/restapi"
 	"gorm.io/gorm"
 )
 
