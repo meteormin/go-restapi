@@ -46,7 +46,7 @@ func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
 	filter, err := NewFilter[Entity](ctx, g.req)
 
 	if g.features.BeforeCallService != nil {
-		err := g.features.BeforeCallService.handler(g.req)
+		err = g.features.BeforeCallService.handler(g.req)
 		if err != nil {
 			return err
 		}
@@ -59,7 +59,7 @@ func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.AfterCallService != nil {
-		err := g.features.AfterCallService.handler(all)
+		err = g.features.AfterCallService.handler(all)
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (g *GenericHandler[Entity, Req, Res]) Find(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.AfterCallService != nil {
-		err := g.features.AfterCallService.handler(find)
+		err = g.features.AfterCallService.handler(find)
 		if err != nil {
 			return err
 		}
@@ -124,7 +124,7 @@ func (g *GenericHandler[Entity, Req, Res]) Create(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.AfterCallService != nil {
-		err := g.features.AfterCallService.handler(req)
+		err = g.features.AfterCallService.handler(req)
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func (g *GenericHandler[Entity, Req, Res]) Update(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.BeforeCallService != nil {
-		err := g.features.BeforeCallService.handler(req)
+		err = g.features.BeforeCallService.handler(req)
 		if err != nil {
 			return err
 		}
@@ -165,7 +165,7 @@ func (g *GenericHandler[Entity, Req, Res]) Update(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.AfterCallService != nil {
-		err := g.features.AfterCallService.handler(update)
+		err = g.features.AfterCallService.handler(update)
 		if err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func (g *GenericHandler[Entity, Req, Res]) Patch(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.BeforeCallService != nil {
-		err := g.features.BeforeCallService.handler(req)
+		err = g.features.BeforeCallService.handler(req)
 		if err != nil {
 			return err
 		}
@@ -207,7 +207,7 @@ func (g *GenericHandler[Entity, Req, Res]) Patch(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.AfterCallService != nil {
-		err := g.features.AfterCallService.handler(update)
+		err = g.features.AfterCallService.handler(update)
 		if err != nil {
 			return err
 		}
@@ -236,7 +236,7 @@ func (g *GenericHandler[Entity, Req, Res]) Delete(ctx *fiber.Ctx) error {
 	}
 
 	if g.features.AfterCallService != nil {
-		err := g.features.AfterCallService.handler(find)
+		err = g.features.AfterCallService.handler(find)
 		if err != nil {
 			return err
 		}
