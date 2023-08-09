@@ -15,6 +15,7 @@ type Handler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Patch(ctx *fiber.Ctx) error
 	Delete(ctx *fiber.Ctx) error
 	GetService() Service[Entity, Req, Res]
+	HandlerHook
 }
 
 type GenericHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {

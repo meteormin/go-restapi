@@ -11,6 +11,7 @@ type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Delete(pk uint) (bool, error)
 	Repo() *Repository[Entity]
 	Response() Res
+	ServiceHook
 }
 
 type GenericService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {

@@ -27,6 +27,14 @@ const (
 	AfterCallRepoEvent     Event = "afterCallRepo"
 )
 
+type HandlerHook interface {
+	Hook() HasMethodEvent
+}
+
+type ServiceHook interface {
+	Hook() HasMethodEvent
+}
+
 type Features struct {
 	ParseRequest      *ParseRequest
 	BeforeCallService *BeforeCallService
