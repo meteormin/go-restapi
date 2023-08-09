@@ -1,5 +1,7 @@
 package restapi
 
+import "github.com/miniyus/gofiber"
+
 type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
 	All(filter *Filter[Entity]) ([]Res, error)
 	Find(pk uint) (Res, error)
@@ -9,13 +11,12 @@ type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Delete(pk uint) (bool, error)
 	Repo() *Repository[Entity]
 	Response() Res
-	ServiceEvents
 }
 
 type GenericService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
-	repo     *Repository[Entity]
-	res      Res
-	features Features
+	repo   *Repository[Entity]
+	res    Res
+	events HasMethodEvent
 }
 
 type GenericRepository[Entity interface{}] struct {
@@ -27,12 +28,9 @@ func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Ent
 	resDto Res,
 ) Service[Entity, Req, Res] {
 	return &GenericService[Entity, Req, Res]{
-		repo: repo,
-		res:  resDto,
-		features: Features{
-			BeforeCallRepo: nil,
-			AfterCallRepo:  nil,
-		},
+		repo:   repo,
+		res:    resDto,
+		events: HasMethodEvent{},
 	}
 }
 
@@ -87,8 +85,8 @@ func (s *GenericService[Entity, Req, Res]) Create(dto Req) (Res, error) {
 		return res, err
 	}
 
-	if s.features.BeforeCallRepo != nil {
-		err = s.features.BeforeCallRepo.handler(dto, ent)
+	if s.features(Create).BeforeCallRepo != nil {
+		err = s.features(Create).BeforeCallRepo.handler(dto, ent)
 		if err != nil {
 			return res, err
 		}
@@ -104,8 +102,8 @@ func (s *GenericService[Entity, Req, Res]) Create(dto Req) (Res, error) {
 		return res, err
 	}
 
-	if s.features.AfterCallRepo != nil {
-		err = s.features.AfterCallRepo.handler(res, create)
+	if s.features(Create).AfterCallRepo != nil {
+		err = s.features(Create).AfterCallRepo.handler(res, create)
 		if err != nil {
 			return res, err
 		}
@@ -126,8 +124,8 @@ func (s *GenericService[Entity, Req, Res]) Update(pk uint, dto Req) (Res, error)
 		return res, err
 	}
 
-	if s.features.BeforeCallRepo != nil {
-		err = s.features.BeforeCallRepo.handler(dto, find)
+	if s.features(Update).BeforeCallRepo != nil {
+		err = s.features(Update).BeforeCallRepo.handler(dto, find)
 		if err != nil {
 			return res, err
 		}
@@ -143,8 +141,8 @@ func (s *GenericService[Entity, Req, Res]) Update(pk uint, dto Req) (Res, error)
 		return res, err
 	}
 
-	if s.features.AfterCallRepo != nil {
-		err = s.features.AfterCallRepo.handler(res, update)
+	if s.features(Update).AfterCallRepo != nil {
+		err = s.features(Update).AfterCallRepo.handler(res, update)
 		if err != nil {
 			return res, err
 		}
@@ -165,8 +163,8 @@ func (s *GenericService[Entity, Req, Res]) Patch(pk uint, dto Req) (Res, error) 
 		return res, err
 	}
 
-	if s.features.BeforeCallRepo != nil {
-		err = s.features.BeforeCallRepo.handler(dto, find)
+	if s.features(Patch).BeforeCallRepo != nil {
+		err = s.features(Patch).BeforeCallRepo.handler(dto, find)
 		if err != nil {
 			return res, err
 		}
@@ -182,8 +180,8 @@ func (s *GenericService[Entity, Req, Res]) Patch(pk uint, dto Req) (Res, error) 
 		return res, err
 	}
 
-	if s.features.AfterCallRepo != nil {
-		err = s.features.AfterCallRepo.handler(res, update)
+	if s.features(Patch).AfterCallRepo != nil {
+		err = s.features(Patch).AfterCallRepo.handler(res, update)
 		if err != nil {
 			return res, err
 		}
@@ -200,10 +198,13 @@ func (s *GenericService[Entity, Req, Res]) Delete(pk uint) (bool, error) {
 	return b, nil
 }
 
-func (s *GenericService[Entity, Req, Res]) BeforeCallRepo(br BeforeCallRepoHandler) {
-	s.features.BeforeCallRepo = NewBeforeCallRepo(br)
+func (s *GenericService[Entity, Req, Res]) Hook() HasMethodEvent {
+	return s.events
 }
 
-func (s *GenericService[Entity, Req, Res]) AfterCallRepo(ar AfterCallRepoHandler) {
-	s.features.AfterCallRepo = NewAfterCallRepo(ar)
+func (s *GenericService[Entity, Req, Res]) features(event MethodEvent) *Features {
+	feat, err := s.events.getMethodEvent(event)
+	gofiber.Log().Error(err)
+
+	return feat
 }

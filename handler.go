@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/miniyus/gofiber"
 	"github.com/miniyus/gofiber/utils"
 	"strconv"
 )
@@ -14,30 +15,27 @@ type Handler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Patch(ctx *fiber.Ctx) error
 	Delete(ctx *fiber.Ctx) error
 	GetService() Service[Entity, Req, Res]
-	HandlerEvents
 }
 
 type GenericHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
-	req      Req
-	service  Service[Entity, Req, Res]
-	features Features
+	req     Req
+	service Service[Entity, Req, Res]
+	events  HasMethodEvent
 }
 
 func NewHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](req Req, service Service[Entity, Req, Res]) Handler[Entity, Req, Res] {
 	return &GenericHandler[Entity, Req, Res]{
 		req:     req,
 		service: service,
-		features: Features{
-			ParseRequest:      nil,
-			BeforeCallService: nil,
-			AfterCallService:  nil,
+		events: HasMethodEvent{
+			methodEvent: nil,
 		},
 	}
 }
 
 func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
-	if g.features.ParseRequest != nil {
-		err := g.features.ParseRequest.handler(ctx, g.req)
+	if g.features(All).ParseRequest != nil {
+		err := g.features(All).ParseRequest.handler(ctx, g.req)
 		if err != nil {
 			return err
 		}
@@ -45,8 +43,8 @@ func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
 
 	filter, err := NewFilter[Entity](ctx, g.req)
 
-	if g.features.BeforeCallService != nil {
-		err = g.features.BeforeCallService.handler(g.req)
+	if g.features(All).BeforeCallService != nil {
+		err = g.features(All).BeforeCallService.handler(g.req)
 		if err != nil {
 			return err
 		}
@@ -58,8 +56,8 @@ func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features.AfterCallService != nil {
-		err = g.features.AfterCallService.handler(all)
+	if g.features(All).AfterCallService != nil {
+		err = g.features(All).AfterCallService.handler(all)
 		if err != nil {
 			return err
 		}
@@ -69,8 +67,8 @@ func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
 }
 
 func (g *GenericHandler[Entity, Req, Res]) Find(ctx *fiber.Ctx) error {
-	if g.features.ParseRequest != nil {
-		err := g.features.ParseRequest.handler(ctx, g.req)
+	if g.features(Find).ParseRequest != nil {
+		err := g.features(Find).ParseRequest.handler(ctx, g.req)
 		if err != nil {
 			return err
 		}
@@ -87,8 +85,8 @@ func (g *GenericHandler[Entity, Req, Res]) Find(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features.AfterCallService != nil {
-		err = g.features.AfterCallService.handler(find)
+	if g.features(Find).AfterCallService != nil {
+		err = g.features(Find).AfterCallService.handler(find)
 		if err != nil {
 			return err
 		}
@@ -98,8 +96,8 @@ func (g *GenericHandler[Entity, Req, Res]) Find(ctx *fiber.Ctx) error {
 }
 
 func (g *GenericHandler[Entity, Req, Res]) Create(ctx *fiber.Ctx) error {
-	if g.features.ParseRequest != nil {
-		err := g.features.ParseRequest.handler(ctx, g.req)
+	if g.features(Create).ParseRequest != nil {
+		err := g.features(Create).ParseRequest.handler(ctx, g.req)
 		if err != nil {
 			return err
 		}
@@ -111,8 +109,8 @@ func (g *GenericHandler[Entity, Req, Res]) Create(ctx *fiber.Ctx) error {
 		return errRes.Response()
 	}
 
-	if g.features.BeforeCallService != nil {
-		err := g.features.BeforeCallService.handler(req)
+	if g.features(Create).BeforeCallService != nil {
+		err := g.features(Create).BeforeCallService.handler(req)
 		if err != nil {
 			return err
 		}
@@ -123,8 +121,8 @@ func (g *GenericHandler[Entity, Req, Res]) Create(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features.AfterCallService != nil {
-		err = g.features.AfterCallService.handler(req)
+	if g.features(Create).AfterCallService != nil {
+		err = g.features(Create).AfterCallService.handler(req)
 		if err != nil {
 			return err
 		}
@@ -133,8 +131,8 @@ func (g *GenericHandler[Entity, Req, Res]) Create(ctx *fiber.Ctx) error {
 }
 
 func (g *GenericHandler[Entity, Req, Res]) Update(ctx *fiber.Ctx) error {
-	if g.features.ParseRequest != nil {
-		err := g.features.ParseRequest.handler(ctx, g.req)
+	if g.features(Update).ParseRequest != nil {
+		err := g.features(Update).ParseRequest.handler(ctx, g.req)
 		if err != nil {
 			return err
 		}
@@ -152,8 +150,8 @@ func (g *GenericHandler[Entity, Req, Res]) Update(ctx *fiber.Ctx) error {
 		return errRes.Response()
 	}
 
-	if g.features.BeforeCallService != nil {
-		err = g.features.BeforeCallService.handler(req)
+	if g.features(Update).BeforeCallService != nil {
+		err = g.features(Update).BeforeCallService.handler(req)
 		if err != nil {
 			return err
 		}
@@ -164,8 +162,8 @@ func (g *GenericHandler[Entity, Req, Res]) Update(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features.AfterCallService != nil {
-		err = g.features.AfterCallService.handler(update)
+	if g.features(Update).AfterCallService != nil {
+		err = g.features(Update).AfterCallService.handler(update)
 		if err != nil {
 			return err
 		}
@@ -175,8 +173,8 @@ func (g *GenericHandler[Entity, Req, Res]) Update(ctx *fiber.Ctx) error {
 }
 
 func (g *GenericHandler[Entity, Req, Res]) Patch(ctx *fiber.Ctx) error {
-	if g.features.ParseRequest != nil {
-		err := g.features.ParseRequest.handler(ctx, g.req)
+	if g.features(Patch).ParseRequest != nil {
+		err := g.features(Patch).ParseRequest.handler(ctx, g.req)
 		if err != nil {
 			return err
 		}
@@ -194,8 +192,8 @@ func (g *GenericHandler[Entity, Req, Res]) Patch(ctx *fiber.Ctx) error {
 		return errRes.Response()
 	}
 
-	if g.features.BeforeCallService != nil {
-		err = g.features.BeforeCallService.handler(req)
+	if g.features(Patch).BeforeCallService != nil {
+		err = g.features(Patch).BeforeCallService.handler(req)
 		if err != nil {
 			return err
 		}
@@ -206,8 +204,8 @@ func (g *GenericHandler[Entity, Req, Res]) Patch(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features.AfterCallService != nil {
-		err = g.features.AfterCallService.handler(update)
+	if g.features(Patch).AfterCallService != nil {
+		err = g.features(Patch).AfterCallService.handler(update)
 		if err != nil {
 			return err
 		}
@@ -217,8 +215,8 @@ func (g *GenericHandler[Entity, Req, Res]) Patch(ctx *fiber.Ctx) error {
 }
 
 func (g *GenericHandler[Entity, Req, Res]) Delete(ctx *fiber.Ctx) error {
-	if g.features.ParseRequest != nil {
-		err := g.features.ParseRequest.handler(ctx, g.req)
+	if g.features(Delete).ParseRequest != nil {
+		err := g.features(Delete).ParseRequest.handler(ctx, g.req)
 		if err != nil {
 			return err
 		}
@@ -235,8 +233,8 @@ func (g *GenericHandler[Entity, Req, Res]) Delete(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features.AfterCallService != nil {
-		err = g.features.AfterCallService.handler(find)
+	if g.features(Delete).AfterCallService != nil {
+		err = g.features(Delete).AfterCallService.handler(find)
 		if err != nil {
 			return err
 		}
@@ -251,14 +249,13 @@ func (g *GenericHandler[Entity, Req, Res]) GetService() Service[Entity, Req, Res
 	return g.service
 }
 
-func (g *GenericHandler[Entity, Req, Res]) ParseRequest(pr ParseRequestHandler) {
-	g.features.ParseRequest = NewParseRequest(pr)
+func (g *GenericHandler[Entity, Req, Res]) Hook() HasMethodEvent {
+	return g.events
 }
 
-func (g *GenericHandler[Entity, Req, Res]) BeforeCallService(bs BeforeCallServiceHandler) {
-	g.features.BeforeCallService = NewBeforeCallService(bs)
-}
+func (g *GenericHandler[Entity, Req, Res]) features(event MethodEvent) *Features {
+	feat, err := g.events.getMethodEvent(event)
+	gofiber.Log().Error(err)
 
-func (g *GenericHandler[Entity, Req, Res]) AfterCallService(as AfterCallServiceHandler) {
-	g.features.AfterCallService = NewAfterCallService(as)
+	return feat
 }
