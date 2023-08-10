@@ -28,20 +28,51 @@ const (
 )
 
 type HandlerHook interface {
-	Hook() HasMethodEvent
+	Hook() HasHandlerEvent
 }
 
 type ServiceHook interface {
-	Hook() HasMethodEvent
+	Hook() HasServiceEvent
+}
+
+type HandlerEvents interface {
+	ParseRequest(pr ParseRequestHandler)
+	BeforeCallService(bs BeforeCallServiceHandler)
+	AfterCallService(as AfterCallServiceHandler)
+}
+
+type ServiceEvents interface {
+	BeforeCallRepo(br BeforeCallRepoHandler)
+	AfterCallRepo(ar AfterCallRepoHandler)
 }
 
 type Features struct {
-	ParseRequest      *ParseRequest
-	BeforeCallService *BeforeCallService
-	AfterCallService  *AfterCallService
-	BeforeCallRepo    *BeforeCallRepo
-	AfterCallRepo     *AfterCallRepo
+	parseRequest      *ParseRequest
+	beforeCallService *BeforeCallService
+	afterCallService  *AfterCallService
+	beforeCallRepo    *BeforeCallRepo
+	afterCallRepo     *AfterCallRepo
 	methodEvent       MethodEvent
+}
+
+func (f *Features) ParseRequest(pr ParseRequestHandler) {
+	f.parseRequest = NewParseRequest(pr)
+}
+
+func (f *Features) BeforeCallService(bs BeforeCallServiceHandler) {
+	f.beforeCallService = NewBeforeCallService(bs)
+}
+
+func (f *Features) AfterCallService(as AfterCallServiceHandler) {
+	f.afterCallService = NewAfterCallService(as)
+}
+
+func (f *Features) BeforeCallRepo(br BeforeCallRepoHandler) {
+	f.beforeCallRepo = NewBeforeCallRepo(br)
+}
+
+func (f *Features) AfterCallRepo(ar AfterCallRepoHandler) {
+	f.afterCallRepo = NewAfterCallRepo(ar)
 }
 
 type HasMethodEvent struct {
@@ -54,10 +85,19 @@ func (e *HasMethodEvent) hasMethodEvent(ev MethodEvent) bool {
 	}).IsEmpty()
 }
 
-func (e *HasMethodEvent) getMethodEvent(ev MethodEvent) (*Features, error) {
-	return e.methodEvent.Filter(func(v Features, i int) bool {
+func (e *HasMethodEvent) getMethodEvent(ev MethodEvent) *Features {
+	if e.methodEvent == nil {
+		e.methodEvent = gollection.NewCollection[Features](make([]Features, 0))
+	}
+	first, _ := e.methodEvent.Filter(func(v Features, i int) bool {
 		return ev == v.methodEvent
 	}).First()
+
+	if first == nil {
+		return &Features{}
+	}
+
+	return first
 }
 
 func (e *HasMethodEvent) setMethodEvent(ev MethodEvent) {
@@ -76,42 +116,77 @@ func (e *HasMethodEvent) setMethodEvent(ev MethodEvent) {
 	}
 }
 
-func (e *HasMethodEvent) Create() (*Features, error) {
+func (e *HasMethodEvent) Create() *Features {
 	e.setMethodEvent(Create)
 	return e.getMethodEvent(Create)
 }
 
-func (e *HasMethodEvent) All() (*Features, error) {
+func (e *HasMethodEvent) All() *Features {
 	e.setMethodEvent(All)
 	return e.getMethodEvent(All)
 }
-func (e *HasMethodEvent) Find() (*Features, error) {
+func (e *HasMethodEvent) Find() *Features {
 	e.setMethodEvent(Find)
 	return e.getMethodEvent(Find)
 }
 
-func (e *HasMethodEvent) Update() (*Features, error) {
+func (e *HasMethodEvent) Update() *Features {
 	e.setMethodEvent(Update)
 	return e.getMethodEvent(Update)
 }
-func (e *HasMethodEvent) Patch() (*Features, error) {
+func (e *HasMethodEvent) Patch() *Features {
 	e.setMethodEvent(Patch)
 	return e.getMethodEvent(Patch)
 }
-func (e *HasMethodEvent) Delete() (*Features, error) {
+func (e *HasMethodEvent) Delete() *Features {
 	e.setMethodEvent(Delete)
 	return e.getMethodEvent(Delete)
 }
 
-type HandlerEvents interface {
-	ParseRequest(pr ParseRequestHandler)
-	BeforeCallService(bs BeforeCallServiceHandler)
-	AfterCallService(as AfterCallServiceHandler)
+type HasHandlerEvent struct {
+	HasMethodEvent
 }
 
-type ServiceEvents interface {
-	BeforeCallRepo(br BeforeCallRepoHandler)
-	AfterCallRepo(ar AfterCallRepoHandler)
+func (he *HasHandlerEvent) Create() HandlerEvents {
+	return he.HasMethodEvent.Create()
+}
+func (he *HasHandlerEvent) Update() HandlerEvents {
+	return he.HasMethodEvent.Update()
+}
+func (he *HasHandlerEvent) Patch() HandlerEvents {
+	return he.HasMethodEvent.Patch()
+}
+func (he *HasHandlerEvent) Delete() HandlerEvents {
+	return he.HasMethodEvent.Delete()
+}
+func (he *HasHandlerEvent) Find() HandlerEvents {
+	return he.HasMethodEvent.Find()
+}
+func (he *HasHandlerEvent) All() HandlerEvents {
+	return he.HasMethodEvent.All()
+}
+
+type HasServiceEvent struct {
+	HasMethodEvent
+}
+
+func (he *HasServiceEvent) Create() ServiceEvents {
+	return he.HasMethodEvent.Create()
+}
+func (he *HasServiceEvent) Update() ServiceEvents {
+	return he.HasMethodEvent.Update()
+}
+func (he *HasServiceEvent) Patch() ServiceEvents {
+	return he.HasMethodEvent.Patch()
+}
+func (he *HasServiceEvent) Delete() ServiceEvents {
+	return he.HasMethodEvent.Delete()
+}
+func (he *HasServiceEvent) Find() ServiceEvents {
+	return he.HasMethodEvent.Find()
+}
+func (he *HasServiceEvent) All() ServiceEvents {
+	return he.HasMethodEvent.All()
 }
 
 type ParseRequestHandler = func(ctx *fiber.Ctx, dto interface{}) error
@@ -193,6 +268,7 @@ func NewAfterCallRepo(ar AfterCallRepoHandler) *AfterCallRepo {
 		handler: ar,
 	}
 }
+
 func (ar *AfterCallRepo) Handler() AfterCallRepoHandler {
 	return ar.handler
 }
