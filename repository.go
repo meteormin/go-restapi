@@ -10,21 +10,25 @@ type Filterable[Entity interface{}] interface {
 	GetByFilter(f *Filter[Entity]) ([]Entity, error)
 }
 
-type Repository[Entity interface{}] struct {
+type Repository[Entity interface{}] interface {
 	gormrepo.GenericRepository[Entity]
 }
 
-func NewRepository[Entity interface{}](db *gorm.DB, model Entity) *Repository[Entity] {
-	return &Repository[Entity]{
+type GenericRepository[Entity interface{}] struct {
+	gormrepo.GenericRepository[Entity]
+}
+
+func NewRepository[Entity interface{}](db *gorm.DB, model Entity) Repository[Entity] {
+	return &GenericRepository[Entity]{
 		gormrepo.NewGenericRepository(db, model).Preload(clause.Associations),
 	}
 }
 
-func (repo *Repository[Entity]) All(filter *Filter[Entity]) ([]Entity, error) {
+func (repo *GenericRepository[Entity]) All(filter *Filter[Entity]) ([]Entity, error) {
 	return repo.GetByFilter(filter)
 }
 
-func (repo *Repository[Entity]) GetByFilter(filter *Filter[Entity]) ([]Entity, error) {
+func (repo *GenericRepository[Entity]) GetByFilter(filter *Filter[Entity]) ([]Entity, error) {
 	entities := make([]Entity, 0)
 	db := repo.DB()
 	if filter != nil {

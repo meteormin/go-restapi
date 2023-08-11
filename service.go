@@ -7,23 +7,19 @@ type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Update(pk uint, dto Req) (Res, error)
 	Patch(pk uint, dto Req) (Res, error)
 	Delete(pk uint) (bool, error)
-	Repo() *Repository[Entity]
+	Repo() GenericRepository[Entity]
 	Response() Res
 	ServiceHook[Entity, Req, Res]
 }
 
 type GenericService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
-	repo   *Repository[Entity]
+	repo   GenericRepository[Entity]
 	res    Res
 	events HasServiceEvent[Entity, Req, Res]
 }
 
-type GenericRepository[Entity interface{}] struct {
-	Repository[Entity]
-}
-
 func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](
-	repo *Repository[Entity],
+	repo GenericRepository[Entity],
 	resDto Res,
 ) Service[Entity, Req, Res] {
 	return &GenericService[Entity, Req, Res]{
@@ -33,7 +29,7 @@ func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Ent
 	}
 }
 
-func (s *GenericService[Entity, Req, Res]) Repo() *Repository[Entity] {
+func (s *GenericService[Entity, Req, Res]) Repo() GenericRepository[Entity] {
 	return s.repo
 }
 
