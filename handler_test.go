@@ -80,3 +80,26 @@ func TestGenericHandler_Find(t *testing.T) {
 	}
 	t.Log(string(all))
 }
+
+func TestGenericHandler_Hook(t *testing.T) {
+	hook := h.Hook()
+	find := hook.Find()
+	t.Log(find)
+	find.AfterCallService(func(dto *TestRes) error {
+		t.Log(dto)
+		return nil
+	})
+	t.Log(find)
+
+	app.App().Fiber().Get("/tests/:id", h.Find)
+	req := httptest.NewRequest("GET", "/tests/1", nil)
+	test, err := app.App().Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	all, err := io.ReadAll(test.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(string(all))
+}

@@ -27,248 +27,244 @@ const (
 	AfterCallRepoEvent     Event = "afterCallRepo"
 )
 
-type HandlerHook interface {
-	Hook() HasHandlerEvent
+type HandlerHook[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
+	Hook() HasHandlerEvent[Entity, Req, Res]
 }
 
-type ServiceHook interface {
-	Hook() HasServiceEvent
+type ServiceHook[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
+	Hook() HasServiceEvent[Entity, Req, Res]
 }
 
-type HandlerEvents interface {
-	ParseRequest(pr ParseRequestHandler)
-	BeforeCallService(bs BeforeCallServiceHandler)
-	AfterCallService(as AfterCallServiceHandler)
+type HandlerEvents[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
+	ParseRequest(pr func(ctx *fiber.Ctx, dto Req) error)
+	BeforeCallService(bs func(dto Req) error)
+	AfterCallService(as func(dto Res) error)
 }
 
-type ServiceEvents interface {
-	BeforeCallRepo(br BeforeCallRepoHandler)
-	AfterCallRepo(ar AfterCallRepoHandler)
+type ServiceEvents[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
+	BeforeCallRepo(br func(dto Req, entity Entity) error)
+	AfterCallRepo(ar func(dto Res, entity Entity) error)
 }
 
-type Features struct {
-	parseRequest      *ParseRequest
-	beforeCallService *BeforeCallService
-	afterCallService  *AfterCallService
-	beforeCallRepo    *BeforeCallRepo
-	afterCallRepo     *AfterCallRepo
+type Features[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
+	parseRequest      *ParseRequest[Entity, Req]
+	beforeCallService *BeforeCallService[Entity, Req, Res]
+	afterCallService  *AfterCallService[Entity, Res]
+	beforeCallRepo    *BeforeCallRepo[Entity, Req, Res]
+	afterCallRepo     *AfterCallRepo[Entity, Res]
 	methodEvent       MethodEvent
 }
 
-func (f *Features) ParseRequest(pr ParseRequestHandler) {
-	f.parseRequest = NewParseRequest(pr)
+func (f *Features[Entity, Req, Res]) ParseRequest(pr func(ctx *fiber.Ctx, dto Req) error) {
+	f.parseRequest = NewParseRequest[Entity, Req](pr)
 }
 
-func (f *Features) BeforeCallService(bs BeforeCallServiceHandler) {
-	f.beforeCallService = NewBeforeCallService(bs)
+func (f *Features[Entity, Req, Res]) BeforeCallService(bs func(dto Req) error) {
+	f.beforeCallService = NewBeforeCallService[Entity, Req, Res](bs)
 }
 
-func (f *Features) AfterCallService(as AfterCallServiceHandler) {
-	f.afterCallService = NewAfterCallService(as)
+func (f *Features[Entity, Req, Res]) AfterCallService(as func(dto Res) error) {
+	f.afterCallService = NewAfterCallService[Entity, Res](as)
 }
 
-func (f *Features) BeforeCallRepo(br BeforeCallRepoHandler) {
-	f.beforeCallRepo = NewBeforeCallRepo(br)
+func (f *Features[Entity, Req, Res]) BeforeCallRepo(br func(dto Req, entity Entity) error) {
+	f.beforeCallRepo = NewBeforeCallRepo[Entity, Req, Res](br)
 }
 
-func (f *Features) AfterCallRepo(ar AfterCallRepoHandler) {
-	f.afterCallRepo = NewAfterCallRepo(ar)
+func (f *Features[Entity, Req, Res]) AfterCallRepo(ar func(dto Res, entity Entity) error) {
+	f.afterCallRepo = NewAfterCallRepo[Entity, Res](ar)
 }
 
-type HasMethodEvent struct {
-	methodEvent gollection.Collection[Features]
+type HasMethodEvent[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
+	methodEvent gollection.Collection[*Features[Entity, Req, Res]]
 }
 
-func (e *HasMethodEvent) hasMethodEvent(ev MethodEvent) bool {
-	return !e.methodEvent.Filter(func(v Features, i int) bool {
+func (e *HasMethodEvent[Entity, Req, Res]) hasMethodEvent(ev MethodEvent) bool {
+	return !e.methodEvent.Filter(func(v *Features[Entity, Req, Res], i int) bool {
 		return ev == v.methodEvent
 	}).IsEmpty()
 }
 
-func (e *HasMethodEvent) getMethodEvent(ev MethodEvent) *Features {
+func (e *HasMethodEvent[Entity, Req, Res]) getMethodEvent(ev MethodEvent) *Features[Entity, Req, Res] {
 	if e.methodEvent == nil {
-		e.methodEvent = gollection.NewCollection[Features](make([]Features, 0))
+		e.methodEvent = gollection.NewCollection[*Features[Entity, Req, Res]](make([]*Features[Entity, Req, Res], 0))
 	}
-	first, _ := e.methodEvent.Filter(func(v Features, i int) bool {
+	first, _ := e.methodEvent.Filter(func(v *Features[Entity, Req, Res], i int) bool {
 		return ev == v.methodEvent
 	}).First()
 
 	if first == nil {
-		return &Features{}
+		f := &Features[Entity, Req, Res]{}
+		e.methodEvent.Add(f)
+		return f
 	}
 
-	return first
+	return *first
 }
 
-func (e *HasMethodEvent) setMethodEvent(ev MethodEvent) {
+func (e *HasMethodEvent[Entity, Req, Res]) setMethodEvent(ev MethodEvent) {
 	if e.methodEvent == nil {
-		e.methodEvent = gollection.NewCollection[Features](make([]Features, 0))
+		e.methodEvent = gollection.NewCollection[*Features[Entity, Req, Res]](make([]*Features[Entity, Req, Res], 0))
 	}
 
-	notExists := e.methodEvent.Filter(func(v Features, i int) bool {
+	notExists := e.methodEvent.Filter(func(v *Features[Entity, Req, Res], i int) bool {
 		return v.methodEvent == ev
 	}).IsEmpty()
 
 	if notExists {
-		e.methodEvent.Add(Features{
+		e.methodEvent.Add(&Features[Entity, Req, Res]{
 			methodEvent: ev,
 		})
 	}
 }
 
-func (e *HasMethodEvent) Create() *Features {
+func (e *HasMethodEvent[Entity, Req, Res]) Create() *Features[Entity, Req, Res] {
 	e.setMethodEvent(Create)
 	return e.getMethodEvent(Create)
 }
 
-func (e *HasMethodEvent) All() *Features {
+func (e *HasMethodEvent[Entity, Req, Res]) All() *Features[Entity, Req, Res] {
 	e.setMethodEvent(All)
 	return e.getMethodEvent(All)
 }
-func (e *HasMethodEvent) Find() *Features {
+func (e *HasMethodEvent[Entity, Req, Res]) Find() *Features[Entity, Req, Res] {
 	e.setMethodEvent(Find)
 	return e.getMethodEvent(Find)
 }
 
-func (e *HasMethodEvent) Update() *Features {
+func (e *HasMethodEvent[Entity, Req, Res]) Update() *Features[Entity, Req, Res] {
 	e.setMethodEvent(Update)
 	return e.getMethodEvent(Update)
 }
-func (e *HasMethodEvent) Patch() *Features {
+func (e *HasMethodEvent[Entity, Req, Res]) Patch() *Features[Entity, Req, Res] {
 	e.setMethodEvent(Patch)
 	return e.getMethodEvent(Patch)
 }
-func (e *HasMethodEvent) Delete() *Features {
+func (e *HasMethodEvent[Entity, Req, Res]) Delete() *Features[Entity, Req, Res] {
 	e.setMethodEvent(Delete)
 	return e.getMethodEvent(Delete)
 }
 
-type HasHandlerEvent struct {
-	HasMethodEvent
+type HasHandlerEvent[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
+	HasMethodEvent[Entity, Req, Res]
 }
 
-func (he *HasHandlerEvent) Create() HandlerEvents {
+func (he *HasHandlerEvent[Entity, Req, Res]) Create() HandlerEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Create()
 }
-func (he *HasHandlerEvent) Update() HandlerEvents {
+func (he *HasHandlerEvent[Entity, Req, Res]) Update() HandlerEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Update()
 }
-func (he *HasHandlerEvent) Patch() HandlerEvents {
+func (he *HasHandlerEvent[Entity, Req, Res]) Patch() HandlerEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Patch()
 }
-func (he *HasHandlerEvent) Delete() HandlerEvents {
+func (he *HasHandlerEvent[Entity, Req, Res]) Delete() HandlerEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Delete()
 }
-func (he *HasHandlerEvent) Find() HandlerEvents {
+func (he *HasHandlerEvent[Entity, Req, Res]) Find() HandlerEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Find()
 }
-func (he *HasHandlerEvent) All() HandlerEvents {
+func (he *HasHandlerEvent[Entity, Req, Res]) All() HandlerEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.All()
 }
 
-type HasServiceEvent struct {
-	HasMethodEvent
+type HasServiceEvent[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
+	HasMethodEvent[Entity, Req, Res]
 }
 
-func (he *HasServiceEvent) Create() ServiceEvents {
+func (he *HasServiceEvent[Entity, Req, Res]) Create() ServiceEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Create()
 }
-func (he *HasServiceEvent) Update() ServiceEvents {
+func (he *HasServiceEvent[Entity, Req, Res]) Update() ServiceEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Update()
 }
-func (he *HasServiceEvent) Patch() ServiceEvents {
+func (he *HasServiceEvent[Entity, Req, Res]) Patch() ServiceEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Patch()
 }
-func (he *HasServiceEvent) Delete() ServiceEvents {
+func (he *HasServiceEvent[Entity, Req, Res]) Delete() ServiceEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Delete()
 }
-func (he *HasServiceEvent) Find() ServiceEvents {
+func (he *HasServiceEvent[Entity, Req, Res]) Find() ServiceEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.Find()
 }
-func (he *HasServiceEvent) All() ServiceEvents {
+func (he *HasServiceEvent[Entity, Req, Res]) All() ServiceEvents[Entity, Req, Res] {
 	return he.HasMethodEvent.All()
 }
 
-type ParseRequestHandler = func(ctx *fiber.Ctx, dto interface{}) error
-
-type ParseRequest struct {
+type ParseRequest[Entity interface{}, Req RequestDTO[*Entity]] struct {
 	event   Event
-	handler ParseRequestHandler
+	handler func(ctx *fiber.Ctx, dto Req) error
 }
 
-func (pr *ParseRequest) Handler() ParseRequestHandler {
+func (pr *ParseRequest[Entity, Req]) Handler() func(ctx *fiber.Ctx, dto Req) error {
 	return pr.handler
 }
 
-func NewParseRequest(handler ParseRequestHandler) *ParseRequest {
-	return &ParseRequest{
+func NewParseRequest[Entity interface{}, Req RequestDTO[*Entity]](handler func(ctx *fiber.Ctx, dto Req) error) *ParseRequest[Entity, Req] {
+	return &ParseRequest[Entity, Req]{
 		event:   ParseRequestEvent,
 		handler: handler,
 	}
 }
 
-type BeforeCallServiceHandler = func(dto interface{}) error
-type BeforeCallService struct {
+type BeforeCallService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
 	event   Event
-	handler BeforeCallServiceHandler
-	HasMethodEvent
+	handler func(dto Req) error
+	HasMethodEvent[Entity, Req, Res]
 }
 
-func NewBeforeCallService(bs BeforeCallServiceHandler) *BeforeCallService {
-	return &BeforeCallService{
+func NewBeforeCallService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](bs func(dto Req) error) *BeforeCallService[Entity, Req, Res] {
+	return &BeforeCallService[Entity, Req, Res]{
 		event:   BeforeCallServiceEvent,
 		handler: bs,
 	}
 }
-func (bs *BeforeCallService) Handler() BeforeCallServiceHandler {
+func (bs *BeforeCallService[Entity, Req, Res]) Handler() func(dto Req) error {
 	return bs.handler
 }
 
-type AfterCallServiceHandler = func(dto interface{}) error
-type AfterCallService struct {
+type AfterCallService[Entity interface{}, Res ResponseDTO[Entity]] struct {
 	event   Event
-	handler AfterCallServiceHandler
+	handler func(dto Res) error
 }
 
-func NewAfterCallService(as AfterCallServiceHandler) *AfterCallService {
-	return &AfterCallService{
+func NewAfterCallService[Entity interface{}, Res ResponseDTO[Entity]](as func(dto Res) error) *AfterCallService[Entity, Res] {
+	return &AfterCallService[Entity, Res]{
 		event:   AfterCallServiceEvent,
 		handler: as,
 	}
 }
-func (as *AfterCallService) Handler() AfterCallServiceHandler {
+func (as *AfterCallService[Entity, Res]) Handler() func(dto Res) error {
 	return as.handler
 }
 
-type BeforeCallRepoHandler = func(dto interface{}, entity interface{}) error
-type BeforeCallRepo struct {
+type BeforeCallRepo[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
 	event   Event
-	handler BeforeCallRepoHandler
+	handler func(dto Req, entity Entity) error
 }
 
-func NewBeforeCallRepo(br BeforeCallRepoHandler) *BeforeCallRepo {
-	return &BeforeCallRepo{
+func NewBeforeCallRepo[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](br func(dto Req, entity Entity) error) *BeforeCallRepo[Entity, Req, Res] {
+	return &BeforeCallRepo[Entity, Req, Res]{
 		event:   BeforeCallRepoEvent,
 		handler: br,
 	}
 }
-func (br *BeforeCallRepo) Handler() BeforeCallRepoHandler {
+func (br *BeforeCallRepo[Entity, Req, Res]) Handler() func(dto Req, entity Entity) error {
 	return br.handler
 }
 
-type AfterCallRepoHandler = func(dto interface{}, entity interface{}) error
-type AfterCallRepo struct {
+type AfterCallRepo[Entity interface{}, Res ResponseDTO[Entity]] struct {
 	event   Event
-	handler AfterCallRepoHandler
+	handler func(dto Res, entity Entity) error
 }
 
-func NewAfterCallRepo(ar AfterCallRepoHandler) *AfterCallRepo {
-	return &AfterCallRepo{
+func NewAfterCallRepo[Entity interface{}, Res ResponseDTO[Entity]](ar func(dto Res, entity Entity) error) *AfterCallRepo[Entity, Res] {
+	return &AfterCallRepo[Entity, Res]{
 		event:   AfterCallRepoEvent,
 		handler: ar,
 	}
 }
 
-func (ar *AfterCallRepo) Handler() AfterCallRepoHandler {
+func (ar *AfterCallRepo[Entity, Res]) Handler() func(dto Res, entity Entity) error {
 	return ar.handler
 }

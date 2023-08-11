@@ -3,6 +3,7 @@ package restapi
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/miniyus/gofiber/utils"
+	"log"
 	"strconv"
 )
 
@@ -14,21 +15,21 @@ type Handler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Patch(ctx *fiber.Ctx) error
 	Delete(ctx *fiber.Ctx) error
 	GetService() Service[Entity, Req, Res]
-	HandlerHook
+	HandlerHook[Entity, Req, Res]
 }
 
 type GenericHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
 	req     Req
 	service Service[Entity, Req, Res]
-	events  HasHandlerEvent
+	events  HasHandlerEvent[Entity, Req, Res]
 }
 
 func NewHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](req Req, service Service[Entity, Req, Res]) Handler[Entity, Req, Res] {
 	return &GenericHandler[Entity, Req, Res]{
 		req:     req,
 		service: service,
-		events: HasHandlerEvent{
-			HasMethodEvent{methodEvent: nil},
+		events: HasHandlerEvent[Entity, Req, Res]{
+			HasMethodEvent[Entity, Req, Res]{methodEvent: nil},
 		},
 	}
 }
@@ -56,13 +57,6 @@ func (g *GenericHandler[Entity, Req, Res]) All(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features(All).afterCallService != nil {
-		err = g.features(All).afterCallService.handler(all)
-		if err != nil {
-			return err
-		}
-	}
-
 	return ctx.Status(fiber.StatusOK).JSON(all)
 }
 
@@ -85,6 +79,7 @@ func (g *GenericHandler[Entity, Req, Res]) Find(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	log.Print(g.features(Find))
 	if g.features(Find).afterCallService != nil {
 		err = g.features(Find).afterCallService.handler(find)
 		if err != nil {
@@ -122,7 +117,7 @@ func (g *GenericHandler[Entity, Req, Res]) Create(ctx *fiber.Ctx) error {
 	}
 
 	if g.features(Create).afterCallService != nil {
-		err = g.features(Create).afterCallService.handler(req)
+		err = g.features(Create).afterCallService.handler(create)
 		if err != nil {
 			return err
 		}
@@ -233,13 +228,6 @@ func (g *GenericHandler[Entity, Req, Res]) Delete(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if g.features(Delete).afterCallService != nil {
-		err = g.features(Delete).afterCallService.handler(find)
-		if err != nil {
-			return err
-		}
-	}
-
 	return ctx.Status(fiber.StatusNoContent).JSON(map[string]interface{}{
 		"result": find,
 	})
@@ -249,10 +237,10 @@ func (g *GenericHandler[Entity, Req, Res]) GetService() Service[Entity, Req, Res
 	return g.service
 }
 
-func (g *GenericHandler[Entity, Req, Res]) Hook() HasHandlerEvent {
+func (g *GenericHandler[Entity, Req, Res]) Hook() HasHandlerEvent[Entity, Req, Res] {
 	return g.events
 }
 
-func (g *GenericHandler[Entity, Req, Res]) features(event MethodEvent) *Features {
+func (g *GenericHandler[Entity, Req, Res]) features(event MethodEvent) *Features[Entity, Req, Res] {
 	return g.events.getMethodEvent(event)
 }

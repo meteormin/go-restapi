@@ -9,13 +9,13 @@ type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Delete(pk uint) (bool, error)
 	Repo() *Repository[Entity]
 	Response() Res
-	ServiceHook
+	ServiceHook[Entity, Req, Res]
 }
 
 type GenericService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
 	repo   *Repository[Entity]
 	res    Res
-	events HasServiceEvent
+	events HasServiceEvent[Entity, Req, Res]
 }
 
 type GenericRepository[Entity interface{}] struct {
@@ -29,7 +29,7 @@ func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Ent
 	return &GenericService[Entity, Req, Res]{
 		repo:   repo,
 		res:    resDto,
-		events: HasServiceEvent{HasMethodEvent{methodEvent: nil}},
+		events: HasServiceEvent[Entity, Req, Res]{HasMethodEvent[Entity, Req, Res]{methodEvent: nil}},
 	}
 }
 
@@ -42,6 +42,7 @@ func (s *GenericService[Entity, Req, Res]) Response() Res {
 }
 
 func (s *GenericService[Entity, Req, Res]) All(filter *Filter[Entity]) ([]Res, error) {
+
 	entities, err := s.repo.All(filter)
 	if err != nil {
 		return nil, err
@@ -102,7 +103,7 @@ func (s *GenericService[Entity, Req, Res]) Create(dto Req) (Res, error) {
 	}
 
 	if s.features(Create).afterCallRepo != nil {
-		err = s.features(Create).afterCallRepo.handler(res, create)
+		err = s.features(Create).afterCallRepo.handler(res, *create)
 		if err != nil {
 			return res, err
 		}
@@ -124,7 +125,7 @@ func (s *GenericService[Entity, Req, Res]) Update(pk uint, dto Req) (Res, error)
 	}
 
 	if s.features(Update).beforeCallRepo != nil {
-		err = s.features(Update).beforeCallRepo.handler(dto, find)
+		err = s.features(Update).beforeCallRepo.handler(dto, *find)
 		if err != nil {
 			return res, err
 		}
@@ -141,7 +142,7 @@ func (s *GenericService[Entity, Req, Res]) Update(pk uint, dto Req) (Res, error)
 	}
 
 	if s.features(Update).afterCallRepo != nil {
-		err = s.features(Update).afterCallRepo.handler(res, update)
+		err = s.features(Update).afterCallRepo.handler(res, *update)
 		if err != nil {
 			return res, err
 		}
@@ -163,7 +164,7 @@ func (s *GenericService[Entity, Req, Res]) Patch(pk uint, dto Req) (Res, error) 
 	}
 
 	if s.features(Patch).beforeCallRepo != nil {
-		err = s.features(Patch).beforeCallRepo.handler(dto, find)
+		err = s.features(Patch).beforeCallRepo.handler(dto, *find)
 		if err != nil {
 			return res, err
 		}
@@ -180,7 +181,7 @@ func (s *GenericService[Entity, Req, Res]) Patch(pk uint, dto Req) (Res, error) 
 	}
 
 	if s.features(Patch).afterCallRepo != nil {
-		err = s.features(Patch).afterCallRepo.handler(res, update)
+		err = s.features(Patch).afterCallRepo.handler(res, *update)
 		if err != nil {
 			return res, err
 		}
@@ -197,10 +198,10 @@ func (s *GenericService[Entity, Req, Res]) Delete(pk uint) (bool, error) {
 	return b, nil
 }
 
-func (s *GenericService[Entity, Req, Res]) Hook() HasServiceEvent {
+func (s *GenericService[Entity, Req, Res]) Hook() HasServiceEvent[Entity, Req, Res] {
 	return s.events
 }
 
-func (s *GenericService[Entity, Req, Res]) features(event MethodEvent) *Features {
+func (s *GenericService[Entity, Req, Res]) features(event MethodEvent) *Features[Entity, Req, Res] {
 	return s.events.getMethodEvent(event)
 }

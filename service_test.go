@@ -45,19 +45,3 @@ func TestGenericService_All(t *testing.T) {
 		t.Logf("%v", res)
 	}
 }
-
-func TestGenericService_Hook(t *testing.T) {
-	hook := service.Hook()
-	find := hook.Create()
-	find.AfterCallRepo(func(dto interface{}, entity interface{}) error {
-		t.Log(dto)
-		t.Log(entity)
-		return nil
-	})
-
-	res, err := service.Find(1)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(res)
-}
