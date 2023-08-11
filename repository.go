@@ -12,6 +12,7 @@ type Filterable[Entity interface{}] interface {
 
 type Repository[Entity interface{}] interface {
 	gormrepo.GenericRepository[Entity]
+	Filterable[Entity]
 }
 
 type GenericRepository[Entity interface{}] struct {

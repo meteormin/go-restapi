@@ -7,19 +7,19 @@ type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 	Update(pk uint, dto Req) (Res, error)
 	Patch(pk uint, dto Req) (Res, error)
 	Delete(pk uint) (bool, error)
-	Repo() GenericRepository[Entity]
+	Repo() Repository[Entity]
 	Response() Res
 	ServiceHook[Entity, Req, Res]
 }
 
 type GenericService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
-	repo   GenericRepository[Entity]
+	repo   Repository[Entity]
 	res    Res
 	events HasServiceEvent[Entity, Req, Res]
 }
 
 func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](
-	repo GenericRepository[Entity],
+	repo Repository[Entity],
 	resDto Res,
 ) Service[Entity, Req, Res] {
 	return &GenericService[Entity, Req, Res]{
@@ -29,7 +29,7 @@ func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Ent
 	}
 }
 
-func (s *GenericService[Entity, Req, Res]) Repo() GenericRepository[Entity] {
+func (s *GenericService[Entity, Req, Res]) Repo() Repository[Entity] {
 	return s.repo
 }
 
@@ -39,7 +39,7 @@ func (s *GenericService[Entity, Req, Res]) Response() Res {
 
 func (s *GenericService[Entity, Req, Res]) All(filter *Filter[Entity]) ([]Res, error) {
 
-	entities, err := s.repo.All(filter)
+	entities, err := s.repo.GetByFilter(filter)
 	if err != nil {
 		return nil, err
 	}
