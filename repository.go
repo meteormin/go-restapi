@@ -25,10 +25,6 @@ func NewRepository[Entity interface{}](db *gorm.DB, model Entity) Repository[Ent
 	}
 }
 
-func (repo *GenericRepository[Entity]) All(filter *Filter[Entity]) ([]Entity, error) {
-	return repo.GetByFilter(filter)
-}
-
 func (repo *GenericRepository[Entity]) GetByFilter(filter *Filter[Entity]) ([]Entity, error) {
 	entities := make([]Entity, 0)
 	db := repo.DB()
