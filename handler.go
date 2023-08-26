@@ -3,7 +3,6 @@ package restapi
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/miniyus/gofiber/utils"
-	"log"
 	"strconv"
 )
 
@@ -79,7 +78,6 @@ func (g *GenericHandler[Entity, Req, Res]) Find(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	log.Print(g.features(Find))
 	if g.features(Find).afterCallService != nil {
 		err = g.features(Find).afterCallService.handler(find)
 		if err != nil {
