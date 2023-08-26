@@ -28,11 +28,11 @@ const (
 )
 
 type HandlerHook[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
-	Hook() HasHandlerEvent[Entity, Req, Res]
+	Hook() *HasHandlerEvent[Entity, Req, Res]
 }
 
 type ServiceHook[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
-	Hook() HasServiceEvent[Entity, Req, Res]
+	Hook() *HasServiceEvent[Entity, Req, Res]
 }
 
 type HandlerEvents[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] interface {
@@ -146,7 +146,7 @@ func (e *HasMethodEvent[Entity, Req, Res]) Delete() *Features[Entity, Req, Res] 
 }
 
 type HasHandlerEvent[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
-	HasMethodEvent[Entity, Req, Res]
+	*HasMethodEvent[Entity, Req, Res]
 }
 
 func (he *HasHandlerEvent[Entity, Req, Res]) Create() HandlerEvents[Entity, Req, Res] {
@@ -169,7 +169,7 @@ func (he *HasHandlerEvent[Entity, Req, Res]) All() HandlerEvents[Entity, Req, Re
 }
 
 type HasServiceEvent[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
-	HasMethodEvent[Entity, Req, Res]
+	*HasMethodEvent[Entity, Req, Res]
 }
 
 func (he *HasServiceEvent[Entity, Req, Res]) Create() ServiceEvents[Entity, Req, Res] {
@@ -210,7 +210,7 @@ func NewParseRequest[Entity interface{}, Req RequestDTO[*Entity]](handler func(c
 type BeforeCallService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
 	event   Event
 	handler func(dto Req) error
-	HasMethodEvent[Entity, Req, Res]
+	*HasMethodEvent[Entity, Req, Res]
 }
 
 func NewBeforeCallService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](bs func(dto Req) error) *BeforeCallService[Entity, Req, Res] {

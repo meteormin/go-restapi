@@ -15,7 +15,7 @@ type Service[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 type GenericService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
 	repo   Repository[Entity]
 	res    Res
-	events HasServiceEvent[Entity, Req, Res]
+	events *HasServiceEvent[Entity, Req, Res]
 }
 
 func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](
@@ -25,7 +25,7 @@ func NewService[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Ent
 	return &GenericService[Entity, Req, Res]{
 		repo:   repo,
 		res:    resDto,
-		events: HasServiceEvent[Entity, Req, Res]{HasMethodEvent[Entity, Req, Res]{methodEvent: nil}},
+		events: &HasServiceEvent[Entity, Req, Res]{&HasMethodEvent[Entity, Req, Res]{methodEvent: nil}},
 	}
 }
 
@@ -194,7 +194,7 @@ func (s *GenericService[Entity, Req, Res]) Delete(pk uint) (bool, error) {
 	return b, nil
 }
 
-func (s *GenericService[Entity, Req, Res]) Hook() HasServiceEvent[Entity, Req, Res] {
+func (s *GenericService[Entity, Req, Res]) Hook() *HasServiceEvent[Entity, Req, Res] {
 	return s.events
 }
 

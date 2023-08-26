@@ -21,15 +21,15 @@ type Handler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity
 type GenericHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]] struct {
 	req     Req
 	service Service[Entity, Req, Res]
-	events  HasHandlerEvent[Entity, Req, Res]
+	events  *HasHandlerEvent[Entity, Req, Res]
 }
 
 func NewHandler[Entity interface{}, Req RequestDTO[*Entity], Res ResponseDTO[Entity]](req Req, service Service[Entity, Req, Res]) Handler[Entity, Req, Res] {
 	return &GenericHandler[Entity, Req, Res]{
 		req:     req,
 		service: service,
-		events: HasHandlerEvent[Entity, Req, Res]{
-			HasMethodEvent[Entity, Req, Res]{methodEvent: nil},
+		events: &HasHandlerEvent[Entity, Req, Res]{
+			&HasMethodEvent[Entity, Req, Res]{methodEvent: nil},
 		},
 	}
 }
@@ -237,7 +237,7 @@ func (g *GenericHandler[Entity, Req, Res]) GetService() Service[Entity, Req, Res
 	return g.service
 }
 
-func (g *GenericHandler[Entity, Req, Res]) Hook() HasHandlerEvent[Entity, Req, Res] {
+func (g *GenericHandler[Entity, Req, Res]) Hook() *HasHandlerEvent[Entity, Req, Res] {
 	return g.events
 }
 
