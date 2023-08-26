@@ -74,6 +74,8 @@ github.com/miniyus/gofiber v1.9.41 h1:MnJlt+J0eHlE8xNFhVzJobW5ZMHNQpeAmdsARLwXu6
 github.com/miniyus/gofiber v1.9.41/go.mod h1:Gt/BIuhvEUVw/8IT3TVf3DZ4uCiwq8Pklk3RtFMYU2o=
 github.com/miniyus/gofiber v1.9.42 h1:GI+2TaWXqppMiwdgtAONb+jb+X/MmwYAcVU1D3glwHc=
 github.com/miniyus/gofiber v1.9.42/go.mod h1:Gt/BIuhvEUVw/8IT3TVf3DZ4uCiwq8Pklk3RtFMYU2o=
+github.com/miniyus/gofiber v1.9.43-0.20230826084019-096d9a38cdc9 h1:ZIv6Ywnttgbl09nQlbInbxVJzb92+OZTtb8Rxyo1YpM=
+github.com/miniyus/gofiber v1.9.43-0.20230826084019-096d9a38cdc9/go.mod h1:Gt/BIuhvEUVw/8IT3TVf3DZ4uCiwq8Pklk3RtFMYU2o=
 github.com/miniyus/gollection v1.1.0 h1:E36nQsFAEnHLCB8aOvrpecrOgs5NRKAj5J01lgpMu6o=
 github.com/miniyus/gollection v1.1.0/go.mod h1:wQ2WTBIvZi4RbuTjQgYfsS4kNEdmlkuu2TLulDuzosc=
 github.com/miniyus/gorm-extension v1.1.12 h1:MJ4qEm1QmJ2HkYp/bnaD90XhTt0R0YX2Nwa2OLIuspo=
